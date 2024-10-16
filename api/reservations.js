@@ -7,7 +7,31 @@ const prisma = require("../prisma");
 const { authenticate } = require("./auth");
 
 router.get("/", authenticate, async (req, res, next) => {
-  // TODO: Send reservations made by the logged in customer
+  try {
+    const customer = req.customer;
+    const reservations = await prisma.reservation.findMany({
+      where: { customerId: customer.id },
+      include: { restaurant: true },
+    });
+    res.json(reservations);
+  } catch (e) {
+    next(e);
+  }
 });
 
-// TODO: POST /
+router.post("/", authenticate, async (req, res, next) => {
+  try {
+    const { partySize, restaurantId } = req.body;
+    const customer = req.customer;
+    const reservation = await prisma.reservation.create({
+      data: {
+        partySize: + partySize,
+        restaurantId: +restaurantId,
+        customerId: customer.id,
+      }
+    });
+    res.status(201).json(reservation);
+  } catch (e) {
+    next(e);
+  }
+});
